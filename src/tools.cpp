@@ -77,8 +77,8 @@ MatrixXd Tools::CalculateJacobian(const VectorXd& x_state) {
   
   // check division by zero
   if (fabs(px2py2) < 0.0001) {
-    std::cout << "CalculateJacobian () - Error - Division by Zero" << std::endl;
-    return Hj;
+    float  eps = 0.0001;
+    px2py2 = eps;
   }
   
   float J31 = py*(vx*py-vy*px)/pow(px2py2,(3.0/2.0));

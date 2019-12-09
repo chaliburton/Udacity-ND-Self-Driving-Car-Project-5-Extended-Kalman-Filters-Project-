@@ -54,11 +54,7 @@ FusionEKF::FusionEKF() {
              0, 0, 1000, 0,
              0, 0, 0, 1000;
   
-  ekf_.F_ = MatrixXd(4, 4);
-  ekf_.F_ << 1, 0, 1, 0,
-             0, 1, 0, 1,
-             0, 0, 1, 0,
-             0, 0, 0, 1;
+  ekf_.F_ = MatrixXd::Identity(4,4);
 }
 
 /**
@@ -72,7 +68,7 @@ void FusionEKF::ProcessMeasurement(const MeasurementPackage &measurement_pack) {
    */
     //implement control flow to deactivate Radar or Lidar
   int use_Lidar = 1;
-  int use_Radar = 0;
+  int use_Radar = 1;
   
   if (!is_initialized_) {
     /**
@@ -172,7 +168,7 @@ void FusionEKF::ProcessMeasurement(const MeasurementPackage &measurement_pack) {
     ekf_.R_ = R_radar_;
     ekf_.UpdateEKF(measurement_pack.raw_measurements_);
     
-  } else if ( use_Lidar == 1) {
+  } else if (measurement_pack.sensor_type_ == MeasurementPackage::LASER && use_Lidar == 1) {
     // TODO: Laser updates
     ekf_.H_ = H_laser_;
     ekf_.R_ = R_laser_;

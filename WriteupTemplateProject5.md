@@ -55,8 +55,8 @@ Control flow checks were not abundant as control loops were minimized and exited
 # [Suggestions to Make Your Project Stand Out!]
 To inviestage how the radar and lidar impacted the the state prediction each was setup to be turned off.
 
-The RMSE results for the Radar alone were: Forwards: [1.2298, 1.0302, 0.9585, 1.1485] Shown in ![alt text][image3]
+The RMSE results for the Radar alone were: Forwards: [0.2238, 0.3461, 0.5671, 0.7877] Shown in ![alt text][image3]
 
-The RMSE results for the lidar alone were: Forwards: [0.2238, 0.3461, 0.5671, 0.7877] Shown in ![alt text][image4]
+The RMSE results for the Lidar alone were: Forwards: [0.1473, 0.1153, 0.6383, 0.5346] Shown in ![alt text][image4]
 
 Compared to the results of the radar, the Lidar is more accurate at predicting location.  The fusion of both sensors results in a much better position and velocity estimation.  Neither sensor on it's own meets any of the given acceptability criteria. 

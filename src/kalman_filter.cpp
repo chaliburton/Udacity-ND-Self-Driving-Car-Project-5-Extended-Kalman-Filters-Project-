@@ -1,5 +1,8 @@
 #include "kalman_filter.h"
 #include <cmath>
+#include<algorithm> 
+
+
 
 using Eigen::MatrixXd;
 using Eigen::VectorXd;
@@ -38,17 +41,7 @@ void KalmanFilter::Update(const VectorXd &z) {
    */
   VectorXd z_pred = H_ * x_;				//predicted measurement based on existing position x and measurement matrix
   VectorXd y = z - z_pred;						//difference in actual measurement and predicted measurement  MatrixXd Ht  = H_.transpose()
-  MatrixXd Ht = H_.transpose();
-  MatrixXd S = H_ * P_ * Ht + R_;
-  MatrixXd Si = S.inverse();
-  MatrixXd PHt = P_ * Ht;
-  MatrixXd K = PHt * Si;
-
-  //new estimate
-  x_ = x_ + (K * y);
-  long x_size = x_.size();
-  MatrixXd I = MatrixXd::Identity(x_size, x_size);
-  P_ = (I - K * H_) * P_;
+  UpdateCommon(y);
 }
 
 void KalmanFilter::UpdateEKF(const VectorXd &z) {
@@ -57,29 +50,37 @@ void KalmanFilter::UpdateEKF(const VectorXd &z) {
    */
 
   // transfer x' to polar coordinates
+  float  eps = 0.0001;
   float  rho = sqrt(x_(0)*x_(0) + x_(1)*x_(1));
+  if (std::abs(x_(0)) < 0.0001){
+    x_(0) = eps;
+  }
+     
   float  theta = atan2(x_(1) , x_(0));
-  float  rho_dot = (x_(0)*x_(2)+x_(1)*x_(3))  / rho;
+  float  rho_dot = (x_(0)*x_(2)+x_(1)*x_(3)) / std::max(eps, rho);
   VectorXd h_Of_X = VectorXd(3); 
   h_Of_X << rho, theta, rho_dot;
   VectorXd y = z - h_Of_X;
   //make sure transformation vector is between -pi and pi
-  while (y(1)>M_PI || y(1) < -M_PI) {
-        if (y(1) > M_PI) {
-            y(1) -= 2 * M_PI;
-        }
-        if (y(1) < -M_PI) {
-            y(1) += 2 * M_PI;
-        }
+  NormalizeAngle(y(1));  
+  UpdateCommon(y);
+}
+void KalmanFilter::UpdateCommon(const VectorXd& y){
+  const MatrixXd PHt = P_ * H_.transpose();
+  const MatrixXd S = H_ * PHt + R_;
+  const MatrixXd K = PHt * S.inverse();
+
+  x_ += K * y;
+  P_ -= K * H_ * P_;
+}
+void KalmanFilter::NormalizeAngle(double& phi){
+  //phi = atan2(sin(phi), cos(phi));
+  while (phi>M_PI || phi < -M_PI) {
+    if (phi > M_PI) {
+      phi -= 2 * M_PI;
+    }
+    if (phi < -M_PI) {
+      phi += 2 * M_PI;
+    }
   }
-  MatrixXd Ht = H_.transpose();
-  MatrixXd S = H_ * P_ * Ht + R_;
-  MatrixXd Si = S.inverse();
-  MatrixXd PHt = P_ * Ht;
-  MatrixXd K = PHt * Si;  
-  long x_size = x_.size();
-  MatrixXd I = MatrixXd::Identity(x_size,x_size);
-  //new estimate
-  x_ = x_ + K * y;
-  P_ = (I-K*H_)*P_; 
 }
