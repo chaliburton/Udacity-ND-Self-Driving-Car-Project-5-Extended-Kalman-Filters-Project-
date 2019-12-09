@@ -1,10 +1,11 @@
 #include "kalman_filter.h"
+#include <cmath>
 
 using Eigen::MatrixXd;
 using Eigen::VectorXd;
 
-/* 
- * Please note that the Eigen library does not initialize 
+/*
+ * Please note that the Eigen library does not initialize
  *   VectorXd or MatrixXd objects with zeros upon creation.
  */
 
@@ -26,16 +27,59 @@ void KalmanFilter::Predict() {
   /**
    * TODO: predict the state
    */
+  x_ = F_ * x_;
+  MatrixXd Ft = F_.transpose();
+  P_ = F_ * P_ * Ft + Q_;
 }
 
 void KalmanFilter::Update(const VectorXd &z) {
   /**
    * TODO: update the state by using Kalman Filter equations
    */
+  VectorXd z_pred = H_ * x_;				//predicted measurement based on existing position x and measurement matrix
+  VectorXd y = z - z_pred;						//difference in actual measurement and predicted measurement  MatrixXd Ht  = H_.transpose()
+  MatrixXd Ht = H_.transpose();
+  MatrixXd S = H_ * P_ * Ht + R_;
+  MatrixXd Si = S.inverse();
+  MatrixXd PHt = P_ * Ht;
+  MatrixXd K = PHt * Si;
+
+  //new estimate
+  x_ = x_ + (K * y);
+  long x_size = x_.size();
+  MatrixXd I = MatrixXd::Identity(x_size, x_size);
+  P_ = (I - K * H_) * P_;
 }
 
 void KalmanFilter::UpdateEKF(const VectorXd &z) {
   /**
    * TODO: update the state by using Extended Kalman Filter equations
    */
+
+  // transfer x' to polar coordinates
+  float  rho = sqrt(x_(0)*x_(0) + x_(1)*x_(1));
+  float  theta = atan2(x_(1) , x_(0));
+  float  rho_dot = (x_(0)*x_(2)+x_(1)*x_(3))  / rho;
+  VectorXd h_Of_X = VectorXd(3); 
+  h_Of_X << rho, theta, rho_dot;
+  VectorXd y = z - h_Of_X;
+  //make sure transformation vector is between -pi and pi
+  while (y(1)>M_PI || y(1) < -M_PI) {
+        if (y(1) > M_PI) {
+            y(1) -= 2 * M_PI;
+        }
+        if (y(1) < -M_PI) {
+            y(1) += 2 * M_PI;
+        }
+  }
+  MatrixXd Ht = H_.transpose();
+  MatrixXd S = H_ * P_ * Ht + R_;
+  MatrixXd Si = S.inverse();
+  MatrixXd PHt = P_ * Ht;
+  MatrixXd K = PHt * Si;  
+  long x_size = x_.size();
+  MatrixXd I = MatrixXd::Identity(x_size,x_size);
+  //new estimate
+  x_ = x_ + K * y;
+  P_ = (I-K*H_)*P_; 
 }
